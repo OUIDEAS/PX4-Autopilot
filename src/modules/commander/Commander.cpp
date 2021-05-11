@@ -1108,6 +1108,10 @@ Commander::handle_command(const vehicle_command_s &cmd)
 		}
 
 		break;
+	
+	case vehicle_command_s::VEHICLE_CMD_DO_HEADINGCONTROL:
+		main_state_transition(_status, commander_state_s::MAIN_STATE_DO_HEADING_CONTROL, _status_flags, _internal_state);
+		break;
 
 	case vehicle_command_s::VEHICLE_CMD_DO_MOTOR_TEST:
 		cmd_result = handle_command_motor_test(cmd);
