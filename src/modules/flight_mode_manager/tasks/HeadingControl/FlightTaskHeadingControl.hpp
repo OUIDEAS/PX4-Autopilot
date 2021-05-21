@@ -14,4 +14,3 @@ public:
 private:
   float _origin_z{0.0f};
 };
-
