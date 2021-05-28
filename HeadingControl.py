@@ -8,11 +8,15 @@ import array
 import time
 import os
 import sys
+import math
 
 mav = mavutil.mavlink_connection('udp::14540')
 print(mav.address)
 mav.wait_heartbeat()
-print('heartbeat from system (system %u component %u)' %(mav.target_system, mav.target_system))
+print('heartbeat from system (system %u component %u)' %(mav.target_system, mav.target_component))
+print('')
+print('Enter all three fields in the user interface and press send')
+print('Open the PX4 shell and type \'commander takeoff\' to launch the drone')
 
 # Running bool is used to make sure the entry bar only takes data when the
 # user tells it to
@@ -28,6 +32,11 @@ global alt
 alt = "0"
 global vel
 vel = "0"
+# initialize position parameters
+global x
+x = 0
+global y
+y = 0
 
 def Send():
     global running
@@ -66,36 +75,30 @@ def Send():
     while float(h) > 360:
         h = float(h)-360
 
-    dir = int(float(h)*100)
-    a = int(float(alt)*1000)
-    v = int(float(vel)*100)
-    # send controller input to bypass the failsafe
-    mav.mav.manual_control_send(
-        mav.target_system, # target_system
-        int(0), # x
-        int(0), # y
-        int(0), # z
-        int(0), # r
-        int(0)  # buttons
-    )
+    dir = float(h)*3.14159/180
+    a = float(alt)
+    v = float(vel)
+
     global wait
     if not wait:
         if dir >= 0:
-            mav.mav.adsb_vehicle_send(
-                int(37), #ICAO address
-                int(0),#lat * 1e7),
-                int(0),#lng*1e7),
-                mavutil.mavlink.ADSB_ALTITUDE_TYPE_PRESSURE_QNH,
-                int(a),#here.alt*1000+10000),
-                int(dir), #heading in degrees
-                int(v), #horizontal velocity
-                int(0), #vertical velocity
-                "bob".encode("ascii"),
-                mavutil.mavlink.ADSB_EMITTER_TYPE_LIGHT,
-                int(1), #time since last communication
-                int(4),
-                int(2002)
+            mav.mav.manual_control_send(
+                mav.target_system, # target_system
+                int(dir*1000),  # Heading in radians * 1000
+                int(a*1000),    # Altitude in meters * 1000
+                int(v*1000),    # Velocity in m/s * 1000
+                int(0), # r
+                int(0)  # buttons
             )
+    else:
+        mav.mav.manual_control_send(
+            mav.target_system, # target_system
+            int(0), # x
+            int(0), # y
+            int(0), # z
+            int(0), # r
+            int(0)  # buttons
+        )
     root.after(5, Send)
 
 #Set running to true and wait to false.
